@@ -83,6 +83,7 @@ h1 { margin-bottom: 6px; font-size: clamp(24px, 3vw, 32px); letter-spacing: -.04
 .button-primary:hover { border-color: #65bdff; background: #2089c9; }
 .button-danger { color: #f0a1a5; }
 .control-hint { margin: 0; color: var(--muted); font-size: 11px; text-align: right; }
+.control-hint[data-state="error"] { color: #ff9a9f; }
 
 .panel-section { margin-bottom: 23px; }
 .section-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px; }
@@ -113,6 +114,7 @@ tbody tr:last-child th, tbody tr:last-child td { border-bottom: 0; }
 .arrow { color: var(--accent); font-size: 18px; }
 .bus-label { display: flex; align-items: center; gap: 9px; color: var(--accent); font: 10px var(--mono); }
 .bus-label::before, .bus-label::after { height: 1px; flex: 1; background: #3575a5; content: ""; }
+.bus-label strong { padding: 2px 7px; border: 1px solid #2a5376; border-radius: 5px; background: #081426; color: #dceeff; font: 10px var(--mono); }
 .diagram-row-bottom .block { min-width: 90px; }
 .diagram-footer { display: flex; justify-content: center; flex-wrap: wrap; gap: 9px; margin-top: 2px; }
 .compact-block { min-width: 100px; padding: 7px; font-size: 9px; }
@@ -122,6 +124,8 @@ tbody tr:last-child th, tbody tr:last-child td { border-bottom: 0; }
 .led-display { display: flex; justify-content: space-between; gap: 6px; padding: 13px 10px; border: 1px solid #1b3149; border-radius: 9px; background: #081426; }
 .led-bit { display: flex; flex-direction: column; align-items: center; gap: 8px; color: #91a5bd; font: 10px var(--mono); }
 .led { width: 17px; height: 17px; border: 1px solid #38516a; border-radius: 50%; background: #15253a; box-shadow: inset 0 1px 3px rgba(0, 0, 0, .65); }
+.led.is-on { border-color: #ffcf65; background: #ffd76a; box-shadow: 0 0 12px rgba(255, 203, 74, .7), inset 0 1px 3px rgba(255, 255, 255, .55); }
+.output-caption strong { color: #dceafa; font-family: var(--mono); font-weight: 500; }
 .output-caption { margin: 9px 0 0; color: var(--muted); font-size: 10px; }
 textarea { display: block; width: 100%; min-height: 119px; resize: vertical; padding: 11px 12px; border: 1px solid #29425d; border-radius: 8px; background: #081426; color: #dceafa; font: 11px/1.7 var(--mono); }
 textarea::placeholder { color: #718ba5; opacity: 1; }
