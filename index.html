@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#071426">
+  <title>SAP-1 Simulator | Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#" aria-label="SAP-1 Simulator home">
+      <span class="brand-mark" aria-hidden="true">S1</span>
+      <span><strong>SAP-1</strong><small>COMPUTER SIMULATOR</small></span>
+    </a>
+    <div class="topbar-status"><span class="status-dot"></span> Interface preview</div>
+  </header>
+
+  <main class="dashboard">
+    <section class="page-heading">
+      <div>
+        <p class="eyebrow">LEARN THE FUNDAMENTALS</p>
+        <h1>Computer Dashboard</h1>
+        <p class="intro">Explore the parts of a simple computer. Simulation controls are visual placeholders for now.</p>
+      </div>
+      <div class="clock-card">
+        <span class="eyebrow">CLOCK CYCLE</span>
+        <strong>00</strong>
+        <span>Ready</span>
+      </div>
+    </section>
+
+    <section class="control-row" aria-label="Program controls">
+      <div class="button-group">
+        <button class="button button-primary" type="button" data-action="Load Program">Load Program</button>
+        <button class="button" type="button" data-action="Step">Step</button>
+        <button class="button" type="button" data-action="Run">Run</button>
+        <button class="button button-danger" type="button" data-action="Reset">Reset</button>
+      </div>
+      <p class="control-hint" id="ui-message" role="status" aria-live="polite">Ready — this is an interface preview.</p>
+    </section>
+
+    <section class="panel-section" aria-labelledby="registers-title">
+      <div class="section-heading">
+        <div><p class="eyebrow">PROCESSOR STATE</p><h2 id="registers-title">Registers</h2></div>
+        <span class="section-note">Placeholder values</span>
+      </div>
+      <div class="register-grid">
+        <article class="register-card"><span class="register-label">Program Counter <abbr title="Program Counter">PC</abbr></span><strong>0H</strong><small>Next address</small></article>
+        <article class="register-card"><span class="register-label">Memory Address <abbr title="Memory Address Register">MAR</abbr></span><strong>0H</strong><small>Selected address</small></article>
+        <article class="register-card"><span class="register-label">Instruction <abbr title="Instruction Register">IR</abbr></span><strong>0000 0000</strong><small>Current instruction</small></article>
+        <article class="register-card"><span class="register-label">Accumulator</span><strong>00H</strong><small>Working value</small></article>
+        <article class="register-card"><span class="register-label">B-Register</span><strong>00H</strong><small>Temporary value</small></article>
+        <article class="register-card"><span class="register-label">Output Register</span><strong>00H</strong><small>Output value</small></article>
+      </div>
+    </section>
+
+    <div class="workspace-grid">
+      <section class="panel memory-panel" aria-labelledby="memory-title">
+        <div class="section-heading">
+          <div><p class="eyebrow">16 × 8-BIT</p><h2 id="memory-title">Memory</h2></div>
+          <span class="section-note">Address / Value</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th scope="col">Address</th><th scope="col">Value</th><th scope="col">Address</th><th scope="col">Value</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">0H</th><td>00</td><th scope="row">8H</th><td>00</td></tr>
+              <tr><th scope="row">1H</th><td>00</td><th scope="row">9H</th><td>00</td></tr>
+              <tr><th scope="row">2H</th><td>00</td><th scope="row">AH</th><td>00</td></tr>
+              <tr><th scope="row">3H</th><td>00</td><th scope="row">BH</th><td>00</td></tr>
+              <tr><th scope="row">4H</th><td>00</td><th scope="row">CH</th><td>00</td></tr>
+              <tr><th scope="row">5H</th><td>00</td><th scope="row">DH</th><td>00</td></tr>
+              <tr><th scope="row">6H</th><td>00</td><th scope="row">EH</th><td>00</td></tr>
+              <tr><th scope="row">7H</th><td>00</td><th scope="row">FH</th><td>00</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel diagram-panel" aria-labelledby="diagram-title">
+        <div class="section-heading">
+          <div><p class="eyebrow">DATA FLOW</p><h2 id="diagram-title">SAP-1 Block Diagram</h2></div>
+          <span class="section-note">Simplified view</span>
+        </div>
+        <div class="diagram" role="img" aria-label="Simplified SAP-1 diagram: Program Counter and Memory connect to the instruction and registers, which share the W-Bus and ALU.">
+          <div class="diagram-row">
+            <div class="block">Program<br>Counter<small>PC</small></div>
+            <span class="arrow" aria-hidden="true">→</span>
+            <div class="block">Memory<small>16 × 8</small></div>
+            <span class="arrow" aria-hidden="true">→</span>
+            <div class="block">Instruction<br>Register<small>IR</small></div>
+          </div>
+          <div class="bus-label"><span>W-Bus</span></div>
+          <div class="diagram-row diagram-row-bottom">
+            <div class="block">Accumulator<small>A</small></div>
+            <span class="arrow" aria-hidden="true">↔</span>
+            <div class="block">ALU<small>Add / Subtract</small></div>
+            <span class="arrow" aria-hidden="true">↔</span>
+            <div class="block">B-Register<small>B</small></div>
+          </div>
+          <div class="diagram-footer">
+            <div class="block compact-block">MAR <small>Address</small></div>
+            <div class="block compact-block">Output <small>Display</small></div>
+            <div class="block compact-block">Control Unit <small>Timing</small></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel output-panel" aria-labelledby="output-title">
+        <div class="section-heading">
+          <div><p class="eyebrow">8-BIT DISPLAY</p><h2 id="output-title">Binary Output</h2></div>
+          <span class="section-note">LED indicators</span>
+        </div>
+        <div class="led-display" aria-label="Eight output LEDs, all off">
+          <div class="led-bit"><span class="led" aria-hidden="true"></span><span>0</span></div>
+          <div class="led-bit"><span class="led" aria-hidden="true"></span><span>0</span></div>
+          <div class="led-bit"><span class="led" aria-hidden="true"></span><span>0</span></div>
+          <div class="led-bit"><span class="led" aria-hidden="true"></span><span>0</span></div>
+          <div class="led-bit"><span class="led" aria-hidden="true"></span><span>0</span></div>
+          <div class="led-bit"><span class="led" aria-hidden="true"></span><span>0</span></div>
+          <div class="led-bit"><span class="led" aria-hidden="true"></span><span>0</span></div>
+          <div class="led-bit"><span class="led" aria-hidden="true"></span><span>0</span></div>
+        </div>
+        <p class="output-caption">LEDs are off in this interface preview.</p>
+      </section>
+
+      <section class="panel program-panel" aria-labelledby="program-title">
+        <div class="section-heading">
+          <div><p class="eyebrow">PROGRAM INPUT</p><h2 id="program-title">Program &amp; Data</h2></div>
+          <span class="section-note">One item per line</span>
+        </div>
+        <label class="visually-hidden" for="program-input">Enter program instructions and data</label>
+        <textarea id="program-input" spellcheck="false" placeholder="Example:
+LDA 0E
+ADD 0F
+OUT
+HLT
+
+0E: 05
+0F: 03"></textarea>
+        <p class="input-help">Enter instructions and data here. Loading and execution are not implemented yet.</p>
+      </section>
+    </div>
+    <footer class="page-footer">SAP-1 Simulator <span>·</span> Learning interface prototype</footer>
+  </main>
+</body>
+</html>
