@@ -1,39 +1,62 @@
-const OPCODES = {
-  LDA: 0b0000,
-  ADD: 0b0001,
-  SUB: 0b0010,
-  OUT: 0b1110,
-  HLT: 0b1111
-};
+const OPCODES = { LDA: 0b0000, ADD: 0b0001, SUB: 0b0010, OUT: 0b1110, HLT: 0b1111 };
+const NAMES = Object.fromEntries(Object.entries(OPCODES).map(([n, o]) => [o, n]));
+
+const REGISTERS = [
+  { key: "pc", label: "Program Counter", abbr: "PC", bits: 4, note: "Next address", kind: "addr" },
+  { key: "mar", label: "Memory Address", abbr: "MAR", bits: 4, note: "Selected address", kind: "addr" },
+  { key: "ir", label: "Instruction", abbr: "IR", bits: 8, note: "Current instruction", kind: "addr" },
+  { key: "accumulator", label: "Accumulator", abbr: "A", bits: 8, note: "Working value", kind: "data" },
+  { key: "bRegister", label: "B-Register", abbr: "B", bits: 8, note: "Temporary value", kind: "data" },
+  { key: "output", label: "Output Register", abbr: "OUT", bits: 8, note: "Output value", kind: "out" }
+];
 
 const memory = new Array(16).fill(0);
 const state = {
-  pc: 0,
-  mar: 0,
-  ir: 0,
-  accumulator: 0,
-  bRegister: 0,
-  output: 0,
-  bus: null,
-  cycles: 0,
-  codeLength: 0,
-  loaded: false,
-  started: false,
-  halted: false
+  pc: 0, mar: 0, ir: 0, accumulator: 0, bRegister: 0, output: 0,
+  bus: null, busSource: "Idle", active: [], cycles: 0, codeLength: 0,
+  loaded: false, started: false, halted: false
 };
+const previous = {};
 
-const messageElement = document.querySelector("#ui-message");
-const machineStateElement = document.querySelector("#machine-state");
-const cycleCountElement = document.querySelector("#cycle-count");
-const busValueElement = document.querySelector("#w-bus-value");
-const ledDisplay = document.querySelector("#led-display");
-const outputBinaryElement = document.querySelector("#output-binary");
-const programInput = document.querySelector("#program-input");
+const $ = (selector) => document.querySelector(selector);
+const messageElement = $("#ui-message");
+const machineStateElement = $("#machine-state");
+const cycleCountElement = $("#cycle-count");
+const busValueElement = $("#w-bus-value");
+const busElement = $("#bus");
+const busSourceElement = $("#bus-source");
+const ledDisplay = $("#led-display");
+const outputBinaryElement = $("#output-binary");
+const outputDecimalElement = $("#output-decimal");
+const programInput = $("#program-input");
+const statusDot = $("#status-dot");
+const statusText = $("#status-text");
 
-function formatHex(value) {
-  return `${value.toString(16).toUpperCase().padStart(2, "0")}H`;
-}
+const hex = (value, digits = 2) => value.toString(16).toUpperCase().padStart(digits, "0");
+const formatHex = (value) => `${hex(value)}H`;
+const binary = (value, bits) => value.toString(2).padStart(bits, "0");
 
+/* ---------- Build static UI ---------- */
+$("#register-grid").innerHTML = REGISTERS.map((r) => `
+  <article class="register-card" data-kind="${r.kind}" data-reg="${r.key}">
+    <div class="reg-head"><span>${r.label}</span><abbr title="${r.label}">${r.abbr}</abbr></div>
+    <strong class="reg-hex"></strong>
+    <div class="reg-bin" aria-hidden="true"></div>
+    <small>${r.note}</small>
+  </article>`).join("");
+
+$("#memory-grid").innerHTML = memory.map((_, i) => `
+  <div class="mem-cell" data-mem="${i}">
+    <span class="addr">${hex(i, 1)}H</span>
+    <span class="val"><span class="hexv">00</span><small class="mnemonic"></small></span>
+    <span class="tags"></span>
+  </div>`).join("");
+
+busElement.innerHTML = [7, 6, 5, 4, 3, 2, 1, 0].map((b) => `<div class="bus-line"><i></i><span>${b}</span></div>`).join("");
+ledDisplay.innerHTML = [7, 6, 5, 4, 3, 2, 1, 0].map((b) => `
+  <div class="led-bit"><span class="led" aria-hidden="true"></span><span class="bit">0</span><span>${1 << b}</span></div>`).join("");
+
+/* ---------- Parsing (unchanged behaviour) ---------- */
 function showMessage(message, isError = false) {
   messageElement.textContent = message;
   messageElement.dataset.state = isError ? "error" : "normal";
@@ -43,15 +66,9 @@ function parseHex(text, lineNumber, description, maximum) {
   let token = text.trim().toUpperCase();
   if (token.endsWith("H")) token = token.slice(0, -1);
   if (token.startsWith("0X")) token = token.slice(2);
-
-  if (!/^[0-9A-F]{1,2}$/.test(token)) {
-    throw new Error(`Line ${lineNumber}: ${description} must be a hexadecimal value.`);
-  }
-
+  if (!/^[0-9A-F]{1,2}$/.test(token)) throw new Error(`Line ${lineNumber}: ${description} must be a hexadecimal value.`);
   const value = Number.parseInt(token, 16);
-  if (value > maximum) {
-    throw new Error(`Line ${lineNumber}: ${description} must be between 00H and ${formatHex(maximum)}.`);
-  }
+  if (value > maximum) throw new Error(`Line ${lineNumber}: ${description} must be between 00H and ${formatHex(maximum)}.`);
   return value;
 }
 
@@ -80,88 +97,92 @@ function parseProgram(source) {
 
     const fields = line.split(/\s+/);
     const mnemonic = fields[0];
-    if (!Object.prototype.hasOwnProperty.call(OPCODES, mnemonic)) {
-      throw new Error(`Line ${lineNumber}: unknown instruction "${mnemonic}".`);
-    }
-
+    if (!Object.prototype.hasOwnProperty.call(OPCODES, mnemonic)) throw new Error(`Line ${lineNumber}: unknown instruction "${mnemonic}".`);
     const needsAddress = mnemonic === "LDA" || mnemonic === "ADD" || mnemonic === "SUB";
-    if (needsAddress && fields.length !== 2) {
-      throw new Error(`Line ${lineNumber}: ${mnemonic} needs one memory address (0H to FH).`);
-    }
-    if (!needsAddress && fields.length !== 1) {
-      throw new Error(`Line ${lineNumber}: ${mnemonic} does not take an operand.`);
-    }
+    if (needsAddress && fields.length !== 2) throw new Error(`Line ${lineNumber}: ${mnemonic} needs one memory address (0H to FH).`);
+    if (!needsAddress && fields.length !== 1) throw new Error(`Line ${lineNumber}: ${mnemonic} does not take an operand.`);
     const operand = needsAddress ? parseHex(fields[1], lineNumber, "Instruction address", 0x0F) : 0;
     instructions.push({ opcode: OPCODES[mnemonic], operand, mnemonic, lineNumber });
   });
 
-  if (instructions.length === 0) {
-    throw new Error("Enter at least one instruction before loading the program.");
-  }
-  if (instructions.length > memory.length) {
-    throw new Error("A program can contain at most 16 instructions.");
-  }
-
-  const conflictingData = dataEntries.find((entry) => entry.address < instructions.length);
-  if (conflictingData) {
-    throw new Error(`Line ${conflictingData.lineNumber}: data at ${formatHex(conflictingData.address)} overlaps an instruction.`);
-  }
-
+  if (instructions.length === 0) throw new Error("Enter at least one instruction before loading the program.");
+  if (instructions.length > memory.length) throw new Error("A program can contain at most 16 instructions.");
+  const conflict = dataEntries.find((entry) => entry.address < instructions.length);
+  if (conflict) throw new Error(`Line ${conflict.lineNumber}: data at ${formatHex(conflict.address)} overlaps an instruction.`);
   return { instructions, dataEntries };
 }
 
-function updateDisplays() {
-  document.querySelector('[data-register="pc"]').textContent = `${state.pc.toString(16).toUpperCase()}H`;
-  document.querySelector('[data-register="mar"]').textContent = `${state.mar.toString(16).toUpperCase()}H`;
-  document.querySelector('[data-register="ir"]').textContent =
-    `${state.ir.toString(2).padStart(8, "0").slice(0, 4)} ${state.ir.toString(2).padStart(8, "0").slice(4)}`;
-  document.querySelector('[data-register="accumulator"]').textContent = formatHex(state.accumulator);
-  document.querySelector('[data-register="bRegister"]').textContent = formatHex(state.bRegister);
-  document.querySelector('[data-register="output"]').textContent = formatHex(state.output);
+/* ---------- Rendering ---------- */
+function bitsMarkup(value, bits) {
+  return binary(value, bits).split("").map((b, i) =>
+    `${bits === 8 && i === 4 ? '<span class="gap"></span>' : ""}<span class="${b === "1" ? "on" : ""}">${b}</span>`).join("");
+}
 
-  document.querySelectorAll("[data-memory-value]").forEach((cell) => {
-    cell.textContent = memory[Number(cell.dataset.memoryValue)].toString(16).toUpperCase().padStart(2, "0");
+function updateDisplays() {
+  REGISTERS.forEach(({ key, bits }) => {
+    const card = document.querySelector(`[data-reg="${key}"]`);
+    const value = state[key];
+    card.querySelector(".reg-hex").textContent = bits === 4 ? `${hex(value, 1)}H` : formatHex(value);
+    card.querySelector(".reg-bin").innerHTML = bitsMarkup(value, bits);
+    if (previous[key] !== undefined && previous[key] !== value) {
+      card.classList.remove("is-changed");
+      void card.offsetWidth; // restart animation
+      card.classList.add("is-changed");
+    }
+    previous[key] = value;
   });
 
-  busValueElement.textContent = state.bus === null ? "—" : formatHex(state.bus);
-  cycleCountElement.textContent = state.cycles.toString().padStart(2, "0");
-  machineStateElement.textContent = state.halted ? "Halted" : state.started ? "Running" : state.loaded ? "Loaded" : "Ready";
+  document.querySelectorAll("[data-mem]").forEach((cell) => {
+    const address = Number(cell.dataset.mem);
+    const value = memory[address];
+    const isCode = state.loaded && address < state.codeLength;
+    cell.querySelector(".hexv").textContent = hex(value);
+    cell.querySelector(".mnemonic").textContent = isCode
+      ? `${NAMES[value >> 4] ?? "?"}${["LDA", "ADD", "SUB"].includes(NAMES[value >> 4]) ? " " + hex(value & 15, 1) : ""}` : "";
+    const isPc = state.loaded && !state.halted && address === state.pc;
+    const isMar = state.started && address === state.mar;
+    cell.classList.toggle("is-pc", isPc);
+    cell.classList.toggle("is-mar", isMar);
+    cell.querySelector(".tags").innerHTML = (isPc ? '<span class="chip chip-pc">PC</span>' : "") + (isMar ? '<span class="chip chip-mar">MAR</span>' : "");
+  });
 
-  const bits = state.output.toString(2).padStart(8, "0");
+  const busBits = state.bus === null ? "00000000" : binary(state.bus, 8);
+  busElement.querySelectorAll(".bus-line").forEach((line, i) => line.classList.toggle("on", busBits[i] === "1"));
+  busElement.setAttribute("aria-label", state.bus === null ? "W-Bus idle" : `W-Bus carrying ${busBits}`);
+  busValueElement.textContent = state.bus === null ? "\u2014" : `${formatHex(state.bus)} (${busBits})`;
+  busSourceElement.textContent = state.busSource;
+
+  document.querySelectorAll("[data-node]").forEach((node) => node.classList.toggle("is-active", state.active.includes(node.dataset.node)));
+
+  const label = state.halted ? "Halted" : state.started ? "Running" : state.loaded ? "Loaded" : "Ready";
+  cycleCountElement.textContent = state.cycles.toString().padStart(2, "0");
+  machineStateElement.textContent = label;
+  statusText.textContent = label === "Ready" ? "Simulator ready" : `Simulator ${label.toLowerCase()}`;
+  statusDot.className = `status-dot${state.halted ? " is-halted" : state.started ? " is-running" : ""}`;
+
+  const bits = binary(state.output, 8);
   ledDisplay.setAttribute("aria-label", `Eight output LEDs showing ${bits}`);
   outputBinaryElement.textContent = bits;
-  ledDisplay.querySelectorAll(".led-bit").forEach((bitElement, index) => {
-    const isOn = bits[index] === "1";
-    bitElement.querySelector(".led").classList.toggle("is-on", isOn);
-    bitElement.querySelector("span:last-child").textContent = bits[index];
+  outputDecimalElement.textContent = state.output;
+  ledDisplay.querySelectorAll(".led-bit").forEach((el, i) => {
+    el.querySelector(".led").classList.toggle("is-on", bits[i] === "1");
+    const bit = el.querySelector(".bit");
+    bit.textContent = bits[i];
+    bit.classList.toggle("on", bits[i] === "1");
   });
 }
 
+/* ---------- Machine ---------- */
 function resetCpu() {
-  state.pc = 0;
-  state.mar = 0;
-  state.ir = 0;
-  state.accumulator = 0;
-  state.bRegister = 0;
-  state.output = 0;
-  state.bus = null;
-  state.cycles = 0;
-  state.started = false;
-  state.halted = false;
+  Object.assign(state, { pc: 0, mar: 0, ir: 0, accumulator: 0, bRegister: 0, output: 0, bus: null, busSource: "Idle", active: [], cycles: 0, started: false, halted: false });
 }
 
 function loadProgram() {
   try {
     const parsed = parseProgram(programInput.value);
     memory.fill(0);
-
-    parsed.instructions.forEach((instruction, address) => {
-      memory[address] = (instruction.opcode << 4) | instruction.operand;
-    });
-    parsed.dataEntries.forEach(({ address, value }) => {
-      memory[address] = value;
-    });
-
+    parsed.instructions.forEach((ins, address) => { memory[address] = (ins.opcode << 4) | ins.operand; });
+    parsed.dataEntries.forEach(({ address, value }) => { memory[address] = value; });
     resetCpu();
     state.codeLength = parsed.instructions.length;
     state.loaded = true;
@@ -173,16 +194,10 @@ function loadProgram() {
 }
 
 function executeInstruction() {
-  if (!state.loaded) {
-    showMessage("Load a valid program before stepping or running.", true);
-    return false;
-  }
-  if (state.halted) {
-    showMessage("The processor is halted. Reset or load another program to continue.");
-    return false;
-  }
+  if (!state.loaded) { showMessage("Load a valid program before stepping or running.", true); return false; }
+  if (state.halted) { showMessage("The processor is halted. Reset or load another program to continue."); return false; }
   if (state.pc >= state.codeLength || state.cycles >= memory.length) {
-    state.halted = true;
+    state.halted = true; state.active = []; state.busSource = "Idle";
     updateDisplays();
     showMessage("Reached the end of the entered instructions.");
     return false;
@@ -192,6 +207,8 @@ function executeInstruction() {
   state.mar = state.pc;
   state.ir = memory[state.mar];
   state.bus = state.ir;
+  state.busSource = "Memory \u2192 IR (fetch)";
+  state.active = ["pc", "mar", "memory", "ir"];
   state.pc = (state.pc + 1) & 0x0F;
   state.started = true;
 
@@ -204,64 +221,63 @@ function executeInstruction() {
       state.mar = operand;
       state.accumulator = memory[state.mar];
       state.bus = state.accumulator;
+      state.busSource = "Memory \u2192 A";
+      state.active = ["ir", "mar", "memory", "accumulator"];
       break;
-    case OPCODES.ADD: {
+    case OPCODES.ADD:
       state.mar = operand;
       state.bRegister = memory[state.mar];
-      // The accumulator keeps only the low 8 bits, just like an 8-bit register.
       state.accumulator = (state.accumulator + state.bRegister) & 0xFF;
       state.bus = state.accumulator;
+      state.busSource = "ALU \u2192 A (A + B)";
+      state.active = ["ir", "mar", "memory", "b", "alu", "accumulator"];
       break;
-    }
     case OPCODES.SUB: {
       state.mar = operand;
       state.bRegister = memory[state.mar];
-      // A - B is A + two's-complement(B), reduced to 8 bits.
-      const twosComplementB = ((~state.bRegister) + 1) & 0xFF;
+      const twosComplementB = ((~state.bRegister) + 1) & 0xFF; // A - B = A + two's complement of B
       state.accumulator = (state.accumulator + twosComplementB) & 0xFF;
       state.bus = state.accumulator;
+      state.busSource = "ALU \u2192 A (A \u2212 B)";
+      state.active = ["ir", "mar", "memory", "b", "alu", "accumulator"];
       break;
     }
     case OPCODES.OUT:
       state.output = state.accumulator;
       state.bus = state.output;
+      state.busSource = "A \u2192 Output";
+      state.active = ["accumulator", "output"];
       break;
     case OPCODES.HLT:
       state.halted = true;
+      state.busSource = "Halted";
+      state.active = ["control"];
       break;
     default:
       state.halted = true;
+      state.active = [];
       updateDisplays();
-      showMessage(`Invalid opcode ${opcode.toString(2).padStart(4, "0")} at ${formatHex(state.mar)}.`, true);
+      showMessage(`Invalid opcode ${binary(opcode, 4)} at ${formatHex(state.mar)}.`, true);
       return false;
   }
 
   updateDisplays();
-  if (state.halted) {
-    showMessage(`HLT executed after ${state.cycles} instruction(s).`);
-  } else {
-    showMessage(`${state.cycles}: ${Object.keys(OPCODES).find((name) => OPCODES[name] === opcode)} executed.`);
-  }
+  showMessage(state.halted ? `HLT executed after ${state.cycles} instruction(s).` : `${state.cycles}: ${NAMES[opcode]} executed.`);
   return true;
 }
 
 function runProgram() {
-  if (!state.loaded) {
-    showMessage("Load a valid program before stepping or running.", true);
-    return;
-  }
+  if (!state.loaded) { showMessage("Load a valid program before stepping or running.", true); return; }
   let executed = 0;
   while (!state.halted && state.pc < state.codeLength && executed < memory.length) {
     if (!executeInstruction()) break;
     executed += 1;
   }
   if (!state.halted && state.pc >= state.codeLength) {
-    state.halted = true;
-    updateDisplays();
+    state.halted = true; updateDisplays();
     showMessage("Reached the end of the entered instructions.");
   } else if (!state.halted && executed >= memory.length) {
-    state.halted = true;
-    updateDisplays();
+    state.halted = true; updateDisplays();
     showMessage("Stopped after one 16-address memory pass because no HLT was reached.");
   }
 }
@@ -275,9 +291,9 @@ function resetMachine() {
   showMessage("Machine reset. Load a program to begin.");
 }
 
-document.querySelector('[data-action="Load Program"]').addEventListener("click", loadProgram);
-document.querySelector('[data-action="Step"]').addEventListener("click", executeInstruction);
-document.querySelector('[data-action="Run"]').addEventListener("click", runProgram);
-document.querySelector('[data-action="Reset"]').addEventListener("click", resetMachine);
+$('[data-action="Load Program"]').addEventListener("click", loadProgram);
+$('[data-action="Step"]').addEventListener("click", executeInstruction);
+$('[data-action="Run"]').addEventListener("click", runProgram);
+$('[data-action="Reset"]').addEventListener("click", resetMachine);
 
 updateDisplays();
