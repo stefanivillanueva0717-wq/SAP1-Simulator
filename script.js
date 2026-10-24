@@ -37,6 +37,7 @@ const formatHex = (value) => `${hex(value)}H`;
 const binary = (value, bits) => value.toString(2).padStart(bits, "0");
 
 /* ---------- Build static UI ---------- */
+
 $("#register-grid").innerHTML = REGISTERS.map((r) => `
   <article class="register-card" data-kind="${r.kind}" data-reg="${r.key}">
     <div class="reg-head"><span>${r.label}</span><abbr title="${r.label}">${r.abbr}</abbr></div>

@@ -11,35 +11,74 @@
 <body>
   <header class="topbar">
     <a class="brand" href="#" aria-label="SAP-1 Simulator home">
-      <span class="brand-mark" aria-hidden="true">S1</span>
+      <span class="brand-mark" aria-hidden="true"><img class="brand-chip" src="assets/cpu-chip.png" alt=""></span>
       <span><strong>SAP-1</strong><small>COMPUTER SIMULATOR</small></span>
     </a>
+    <nav class="topbar-nav" aria-label="Dashboard sections">
+      <a class="nav-link is-current" href="#program-title">Simulator</a>
+      <a class="nav-link" href="#registers-title">Registers</a>
+      <a class="nav-link" href="#diagram-title">Architecture</a>
+    </nav>
     <div class="topbar-status"><span class="status-dot" id="status-dot"></span><span id="status-text">Simulator ready</span></div>
   </header>
 
   <main class="dashboard">
     <section class="page-heading">
       <div>
-        <p class="eyebrow">LEARN THE FUNDAMENTALS</p>
-        <h1>Computer Dashboard</h1>
-        <p class="intro">Load a program, then step through the fetch-decode-execute cycle.</p>
-      </div>
-      <div class="clock-card" aria-live="polite">
-        <span class="card-label">INSTRUCTIONS</span>
-        <strong id="cycle-count">00</strong>
-        <span id="machine-state">Ready</span>
+        <p class="eyebrow">SAP-1 COMPUTER ARCHITECTURE · EXPLORE THE CORE</p>
+        <h1>Space Nexus</h1>
+        <p class="intro">Load a program and explore the fetch-decode-execute cycle.</p>
       </div>
     </section>
 
-    <section class="control-row" aria-label="Program controls">
-      <div class="button-group">
-        <button class="button button-primary" type="button" data-action="Load Program">Load Program</button>
-        <button class="button" type="button" data-action="Step">Step</button>
-        <button class="button" type="button" data-action="Run">Run</button>
-        <button class="button button-danger" type="button" data-action="Reset">Reset</button>
-      </div>
-      <p class="control-hint" id="ui-message" role="status" aria-live="polite">Enter a program and select Load Program.</p>
-    </section>
+    <div class="top-console">
+      <section class="panel program-panel" aria-labelledby="program-title">
+        <div class="section-heading">
+          <div><p class="eyebrow">PROGRAM INPUT</p><h2 id="program-title">Program &amp; Data</h2></div>
+          <span class="section-note">One item per line</span>
+        </div>
+        <label class="visually-hidden" for="program-input">Enter program instructions and data</label>
+        <textarea id="program-input" spellcheck="false" placeholder="Example:
+LDA 0E
+ADD 0F
+OUT
+HLT
+
+0E: 05
+0F: 03"></textarea>
+        <p class="input-help">One instruction per line. Optional data lines use hex address: byte (for example, 0E: 05). Instructions begin at 0H. Values are hexadecimal; use ; or # for comments.</p>
+      </section>
+
+      <section class="control-row" aria-label="Program controls">
+        <p class="eyebrow control-eyebrow">EXECUTION CONTROLS</p>
+        <div class="button-group">
+          <button class="button button-primary" type="button" data-action="Load Program">Load Program</button>
+          <button class="button" type="button" data-action="Step">Step</button>
+          <button class="button" type="button" data-action="Run">Run</button>
+          <button class="button button-danger" type="button" data-action="Reset">Reset</button>
+        </div>
+        <div class="control-readout">
+          <div class="clock-card" aria-live="polite">
+            <span class="card-label">INSTRUCTIONS</span>
+            <strong id="cycle-count">00</strong>
+            <span id="machine-state">Ready</span>
+          </div>
+          <p class="control-hint" id="ui-message" role="status" aria-live="polite">Enter a program and select Load Program.</p>
+        </div>
+      </section>
+
+      <section class="panel output-panel" aria-labelledby="output-title">
+        <div class="section-heading">
+          <div><p class="eyebrow">8-BIT DISPLAY</p><h2 id="output-title">Output Register &amp; LEDs</h2></div>
+          <span class="section-note">Live output</span>
+        </div>
+        <div class="led-display" id="led-display" aria-label="Eight output LEDs showing 00000000"></div>
+        <div class="output-summary">
+          <p class="output-caption">Decimal <strong id="output-decimal">0</strong></p>
+          <p class="output-caption">Binary <strong id="output-binary">00000000</strong></p>
+        </div>
+      </section>
+    </div>
 
     <section class="register-section" aria-labelledby="registers-title">
       <div class="section-heading">
@@ -92,34 +131,6 @@
         </div>
       </section>
 
-      <section class="panel output-panel" aria-labelledby="output-title">
-        <div class="section-heading">
-          <div><p class="eyebrow">8-BIT DISPLAY</p><h2 id="output-title">Binary Output</h2></div>
-          <span class="section-note">LED indicators</span>
-        </div>
-        <div class="led-display" id="led-display" aria-label="Eight output LEDs showing 00000000"></div>
-        <div class="output-summary">
-          <p class="output-caption">Binary <strong id="output-binary">00000000</strong></p>
-          <p class="output-caption">Decimal <strong id="output-decimal">0</strong></p>
-        </div>
-      </section>
-
-      <section class="panel program-panel" aria-labelledby="program-title">
-        <div class="section-heading">
-          <div><p class="eyebrow">PROGRAM INPUT</p><h2 id="program-title">Program &amp; Data</h2></div>
-          <span class="section-note">One item per line</span>
-        </div>
-        <label class="visually-hidden" for="program-input">Enter program instructions and data</label>
-        <textarea id="program-input" spellcheck="false" placeholder="Example:
-LDA 0E
-ADD 0F
-OUT
-HLT
-
-0E: 05
-0F: 03"></textarea>
-        <p class="input-help">One instruction per line. Optional data lines use hex address: byte (for example, 0E: 05). Instructions begin at 0H. Values are hexadecimal; use ; or # for comments.</p>
-      </section>
     </div>
     <footer class="page-footer">SAP-1 Simulator <span>·</span> Learning interface prototype</footer>
   </main>
