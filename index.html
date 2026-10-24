@@ -14,7 +14,7 @@
       <span class="brand-mark" aria-hidden="true">S1</span>
       <span><strong>SAP-1</strong><small>COMPUTER SIMULATOR</small></span>
     </a>
-    <div class="topbar-status"><span class="status-dot"></span> Simulator ready</div>
+    <div class="topbar-status"><span class="status-dot" id="status-dot"></span><span id="status-text">Simulator ready</span></div>
   </header>
 
   <main class="dashboard">
@@ -24,8 +24,8 @@
         <h1>Computer Dashboard</h1>
         <p class="intro">Load a program, then step through the fetch-decode-execute cycle.</p>
       </div>
-      <div class="clock-card">
-        <span class="eyebrow">INSTRUCTIONS</span>
+      <div class="clock-card" aria-live="polite">
+        <span class="card-label">INSTRUCTIONS</span>
         <strong id="cycle-count">00</strong>
         <span id="machine-state">Ready</span>
       </div>
@@ -41,19 +41,12 @@
       <p class="control-hint" id="ui-message" role="status" aria-live="polite">Enter a program and select Load Program.</p>
     </section>
 
-    <section class="panel-section" aria-labelledby="registers-title">
+    <section class="register-section" aria-labelledby="registers-title">
       <div class="section-heading">
         <div><p class="eyebrow">PROCESSOR STATE</p><h2 id="registers-title">Registers</h2></div>
         <span class="section-note">8-bit data · 4-bit addresses</span>
       </div>
-      <div class="register-grid">
-        <article class="register-card"><span class="register-label">Program Counter <abbr title="Program Counter">PC</abbr></span><strong data-register="pc">0H</strong><small>Next address</small></article>
-        <article class="register-card"><span class="register-label">Memory Address <abbr title="Memory Address Register">MAR</abbr></span><strong data-register="mar">0H</strong><small>Selected address</small></article>
-        <article class="register-card"><span class="register-label">Instruction <abbr title="Instruction Register">IR</abbr></span><strong data-register="ir">0000 0000</strong><small>Current instruction</small></article>
-        <article class="register-card"><span class="register-label">Accumulator</span><strong data-register="accumulator">00H</strong><small>Working value</small></article>
-        <article class="register-card"><span class="register-label">B-Register</span><strong data-register="bRegister">00H</strong><small>Temporary value</small></article>
-        <article class="register-card"><span class="register-label">Output Register</span><strong data-register="output">00H</strong><small>Output value</small></article>
-      </div>
+      <div class="register-grid" id="register-grid"></div>
     </section>
 
     <div class="workspace-grid">
@@ -62,21 +55,8 @@
           <div><p class="eyebrow">16 × 8-BIT</p><h2 id="memory-title">Memory</h2></div>
           <span class="section-note">Address / Value</span>
         </div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th scope="col">Address</th><th scope="col">Value</th><th scope="col">Address</th><th scope="col">Value</th></tr></thead>
-            <tbody>
-              <tr><th scope="row">0H</th><td data-memory-value="0">00</td><th scope="row">8H</th><td data-memory-value="8">00</td></tr>
-              <tr><th scope="row">1H</th><td data-memory-value="1">00</td><th scope="row">9H</th><td data-memory-value="9">00</td></tr>
-              <tr><th scope="row">2H</th><td data-memory-value="2">00</td><th scope="row">AH</th><td data-memory-value="10">00</td></tr>
-              <tr><th scope="row">3H</th><td data-memory-value="3">00</td><th scope="row">BH</th><td data-memory-value="11">00</td></tr>
-              <tr><th scope="row">4H</th><td data-memory-value="4">00</td><th scope="row">CH</th><td data-memory-value="12">00</td></tr>
-              <tr><th scope="row">5H</th><td data-memory-value="5">00</td><th scope="row">DH</th><td data-memory-value="13">00</td></tr>
-              <tr><th scope="row">6H</th><td data-memory-value="6">00</td><th scope="row">EH</th><td data-memory-value="14">00</td></tr>
-              <tr><th scope="row">7H</th><td data-memory-value="7">00</td><th scope="row">FH</th><td data-memory-value="15">00</td></tr>
-            </tbody>
-          </table>
-        </div>
+        <div class="mem-grid" id="memory-grid" aria-label="Sixteen memory addresses"></div>
+        <p class="legend"><span class="chip chip-pc">PC</span> Next instruction <span class="chip chip-mar">MAR</span> Selected address</p>
       </section>
 
       <section class="panel diagram-panel" aria-labelledby="diagram-title">
@@ -84,26 +64,30 @@
           <div><p class="eyebrow">DATA FLOW</p><h2 id="diagram-title">SAP-1 Block Diagram</h2></div>
           <span class="section-note">Simplified view</span>
         </div>
-        <div class="diagram" role="img" aria-label="Simplified SAP-1 diagram: Program Counter and Memory connect to the instruction and registers, which share the W-Bus and ALU.">
+        <div class="diagram" role="img" aria-label="Simplified SAP-1 diagram showing the program counter, memory, instruction register, accumulator, ALU, B-register, and control components.">
           <div class="diagram-row">
-            <div class="block">Program<br>Counter<small>PC</small></div>
+            <div class="block" data-node="pc">Program<br>Counter<small>PC</small></div>
             <span class="arrow" aria-hidden="true">→</span>
-            <div class="block">Memory<small>16 × 8</small></div>
+            <div class="block" data-node="memory">Memory<small>16 × 8</small></div>
             <span class="arrow" aria-hidden="true">→</span>
-            <div class="block">Instruction<br>Register<small>IR</small></div>
+            <div class="block" data-node="ir">Instruction<br>Register<small>IR</small></div>
           </div>
-          <div class="bus-label"><span>W-Bus</span><strong id="w-bus-value">—</strong></div>
+          <div class="bus-widget">
+            <div class="bus-heading"><strong>W-Bus</strong><span id="bus-source">Idle</span></div>
+            <div class="bus" id="bus" aria-label="W-Bus idle"></div>
+            <p class="bus-value">Current value <strong id="w-bus-value">—</strong></p>
+          </div>
           <div class="diagram-row diagram-row-bottom">
-            <div class="block">Accumulator<small>A</small></div>
+            <div class="block" data-node="accumulator">Accumulator<small>A</small></div>
             <span class="arrow" aria-hidden="true">↔</span>
-            <div class="block">ALU<small>Add / Subtract</small></div>
+            <div class="block" data-node="alu">ALU<small>Add / Subtract</small></div>
             <span class="arrow" aria-hidden="true">↔</span>
-            <div class="block">B-Register<small>B</small></div>
+            <div class="block" data-node="b">B-Register<small>B</small></div>
           </div>
           <div class="diagram-footer">
-            <div class="block compact-block">MAR <small>Address</small></div>
-            <div class="block compact-block">Output <small>Display</small></div>
-            <div class="block compact-block">Control Unit <small>Timing</small></div>
+            <div class="block compact-block" data-node="mar">MAR<small>Address</small></div>
+            <div class="block compact-block" data-node="output">Output<small>Display</small></div>
+            <div class="block compact-block" data-node="control">Control Unit<small>Timing</small></div>
           </div>
         </div>
       </section>
@@ -113,17 +97,11 @@
           <div><p class="eyebrow">8-BIT DISPLAY</p><h2 id="output-title">Binary Output</h2></div>
           <span class="section-note">LED indicators</span>
         </div>
-        <div class="led-display" id="led-display" aria-label="Eight output LEDs, all off">
-          <div class="led-bit"><span class="led" aria-hidden="true"></span><span>0</span></div>
-          <div class="led-bit"><span class="led" aria-hidden="true"></span><span>0</span></div>
-          <div class="led-bit"><span class="led" aria-hidden="true"></span><span>0</span></div>
-          <div class="led-bit"><span class="led" aria-hidden="true"></span><span>0</span></div>
-          <div class="led-bit"><span class="led" aria-hidden="true"></span><span>0</span></div>
-          <div class="led-bit"><span class="led" aria-hidden="true"></span><span>0</span></div>
-          <div class="led-bit"><span class="led" aria-hidden="true"></span><span>0</span></div>
-          <div class="led-bit"><span class="led" aria-hidden="true"></span><span>0</span></div>
+        <div class="led-display" id="led-display" aria-label="Eight output LEDs showing 00000000"></div>
+        <div class="output-summary">
+          <p class="output-caption">Binary <strong id="output-binary">00000000</strong></p>
+          <p class="output-caption">Decimal <strong id="output-decimal">0</strong></p>
         </div>
-        <p class="output-caption">Output value: <strong id="output-binary">00000000</strong></p>
       </section>
 
       <section class="panel program-panel" aria-labelledby="program-title">

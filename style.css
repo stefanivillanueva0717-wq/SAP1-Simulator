@@ -228,3 +228,85 @@ body::after { width: 340px; height: 340px; right: -80px; top: 58%; background: #
   body::before, body::after { width: 220px; height: 220px; }
   .topbar, .panel, .control-row, .register-card { -webkit-backdrop-filter: blur(12px) saturate(140%); backdrop-filter: blur(12px) saturate(140%); }
 }
+
+/* Consistent dashboard layout */
+.dashboard { gap: 20px; padding-top: 32px; padding-bottom: 24px; }
+.page-heading { min-height: 88px; }
+.eyebrow { margin: 0 0 4px; color: var(--accent); font-size: 10px; font-weight: 700; letter-spacing: .12em; }
+.page-heading .eyebrow { margin-bottom: 6px; }
+.page-heading h1 { margin-bottom: 4px; }
+.register-section { min-width: 0; }
+.register-section .section-heading { margin-bottom: 14px; }
+.register-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px; }
+.register-card { min-height: 142px; padding: 14px 16px; }
+.reg-head { min-height: 24px; }
+.reg-hex { min-height: 30px; margin: 10px 0 2px; line-height: 1.25; }
+.register-card small { margin-top: 8px; }
+
+.workspace-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); }
+.panel { height: 100%; display: flex; flex-direction: column; }
+.panel > .section-heading { min-height: 38px; align-items: center; }
+.memory-panel .mem-grid { flex: 1; grid-auto-rows: minmax(36px, auto); }
+.diagram { flex: 1; min-height: 0; gap: 16px; }
+.diagram-row { gap: clamp(8px, 1.5vw, 18px); }
+.diagram-row .block { max-width: 160px; }
+.bus-widget { padding: 12px; border: 1px solid rgba(255, 255, 255, .1); border-radius: 12px; background: rgba(4, 12, 28, .2); }
+.bus-heading { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 10px; color: var(--text); font-size: 12px; }
+.bus-heading span { color: var(--muted); font-size: 11px; text-align: right; }
+.bus-value { display: flex; justify-content: space-between; gap: 12px; }
+.bus-value strong { text-align: right; }
+.output-summary { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px 20px; margin-top: auto; }
+.output-caption { margin-top: 12px; }
+.program-panel textarea { flex: 1; min-height: 200px; }
+.control-hint { flex: 1; max-width: 520px; }
+.button { min-width: 92px; }
+.page-footer { padding: 4px 0 8px; }
+
+@media (max-width: 1100px) {
+  .register-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 860px) {
+  .workspace-grid { grid-template-columns: minmax(0, 1fr); }
+  .output-panel, .program-panel { grid-column: auto; }
+  .panel { min-height: 0; }
+  .diagram-panel { min-height: 360px; }
+  .output-panel { min-height: 210px; }
+  .program-panel textarea { min-height: 180px; }
+}
+@media (max-width: 700px) {
+  .register-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dashboard { gap: 16px; padding-top: 22px; }
+  .page-heading { align-items: flex-start; }
+}
+@media (max-width: 520px) {
+  .page-heading { gap: 12px; }
+  .page-heading .intro { max-width: 34ch; }
+  .clock-card { min-width: 84px; padding: 9px 10px; }
+  .clock-card .card-label { font-size: 9px; }
+  .register-grid { gap: 9px; }
+  .register-card { min-height: 132px; padding: 11px; }
+  .reg-head { align-items: flex-start; font-size: 11px; }
+  .reg-hex { font-size: 20px; }
+  .section-heading { align-items: flex-start !important; }
+  .section-note { text-align: right; }
+  .button-group { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .button-group .button { width: 100%; }
+  .control-hint { max-width: none; }
+  .panel { padding: 14px; }
+  .diagram-panel { min-height: 0; }
+  .diagram-row { flex-wrap: wrap; }
+  .diagram-row .block { flex: 1 1 28%; max-width: none; }
+  .arrow { display: none; }
+  .diagram-footer { gap: 8px; }
+  .compact-block { flex-basis: 28%; }
+  .bus-widget { padding: 10px; }
+}
+@media (max-width: 360px) {
+  .register-grid { grid-template-columns: minmax(0, 1fr); }
+  .register-card { min-height: 0; }
+  .page-heading { flex-direction: column; }
+  .clock-card { width: 100%; text-align: left; }
+  .clock-card strong, .clock-card #machine-state { display: inline-block; margin-right: 8px; }
+  .led-display { gap: 3px; padding: 12px 6px; }
+  .led { width: 20px; }
+}
